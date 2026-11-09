@@ -1,0 +1,76 @@
+<!DOCTYPE html><html lang="uz"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>UzbeCards</title><script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{--bg:#171329;--bg2:#292044;--acc:#6946B8;--tx:#F5F0FF;--tx2:#BDB0D9;--gold:#FFD166;--cream:#FBF4E4}
+*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{font-family:system-ui,sans-serif;color:var(--tx);background:radial-gradient(circle at 50% 0,#3a2870 0,transparent 55%),
+conic-gradient(#171329 25%,#1d1733 0 50%,#171329 0 75%,#1d1733 0) 0 0/48px 48px,var(--bg);padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+#app{max-width:520px;margin:0 auto;min-height:100%;padding:16px;display:flex;flex-direction:column;gap:14px}
+h1{font-size:30px;text-align:center;color:var(--gold);text-shadow:0 0 24px #6946B8}
+.panel{background:linear-gradient(160deg,var(--bg2),#211a38);border:1px solid #6946B855;border-radius:18px;padding:16px;box-shadow:0 8px 30px #0006}
+.btn{border:0;border-radius:14px;padding:14px;font-size:16px;font-weight:700;width:100%;cursor:pointer;color:#2a1b00;background:linear-gradient(#FFD166,#e8ae3c);box-shadow:0 4px 18px #FFD16633}
+.btn.sec{color:var(--tx);background:linear-gradient(#7a56cc,var(--acc));box-shadow:0 4px 18px #6946B855}
+.btn:disabled{opacity:.4}.btn:active{transform:scale(.97)}
+input{width:100%;padding:13px;border-radius:12px;border:1px solid #6946B877;background:var(--bg);color:var(--tx);font-size:16px;text-transform:uppercase;text-align:center;letter-spacing:3px}
+.row{display:flex;gap:10px;align-items:center}.col{display:flex;flex-direction:column;gap:10px}
+.av{width:46px;height:46px;border-radius:50%;background:var(--acc);display:grid;place-items:center;font-weight:800;object-fit:cover;border:2px solid var(--gold);flex:none}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center;margin-top:12px}
+.stats b{display:block;font-size:24px;color:var(--gold)}.stats span,.mut{color:var(--tx2);font-size:13px}
+.code{font-size:34px;letter-spacing:6px;text-align:center;color:var(--gold);font-weight:800}
+.card{width:54px;height:78px;border-radius:9px;background:linear-gradient(#fffaf0,var(--cream));color:#1c1830;display:flex;flex-direction:column;justify-content:space-between;padding:4px 5px;font-weight:800;font-size:17px;box-shadow:0 4px 10px #0008,inset 0 0 0 1px #c9a24a66;flex:none;transition:.2s;line-height:1}
+.card.r{color:#b8283c}.card i{font-style:normal;font-size:24px;text-align:center}.card.t{box-shadow:0 0 0 2px var(--gold),0 4px 10px #0008}
+.back{background:repeating-linear-gradient(45deg,#6946B8 0 6px,#4d3190 6px 12px);border:3px solid var(--cream);color:transparent}
+.hand{display:flex;overflow-x:auto;padding:14px 6px 8px;justify-content:safe center}.hand .card{margin-left:-14px;cursor:pointer}.hand .card:first-child{margin:0}.hand .card:hover{transform:translateY(-12px)}
+.felt{min-height:200px;border-radius:20px;background:radial-gradient(circle,#4a3490aa,#292044 70%);border:1px solid #6946B877;padding:12px;display:flex;flex-wrap:wrap;gap:12px;justify-content:center;align-content:center}
+.pair{position:relative;width:62px;height:90px}.pair .card:nth-child(2){position:absolute;left:14px;top:12px}
+.opp{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}.opp .panel{padding:8px 12px;text-align:center;font-size:13px}.opp .on{border-color:var(--gold);box-shadow:0 0 18px #FFD16655}
+.toast{position:fixed;top:14px;left:50%;transform:translateX(-50%);background:#b8283c;padding:10px 18px;border-radius:12px;z-index:9}
+.ov{position:fixed;inset:0;background:#000b;display:grid;place-items:center;padding:20px;z-index:5}
+.status{text-align:center;color:var(--gold);font-weight:700}
+</style></head><body><div id="app"></div><script>
+const tg=window.Telegram?.WebApp;tg?.ready();tg?.expand();tg?.setHeaderColor?.('#171329');tg?.setBackgroundColor?.('#171329');
+const R={11:'J',12:'Q',13:'K',14:'A'},SU=['♠','♥','♦','♣'],$=document.getElementById('app');
+let ws,me,s,bot='',joined=0,tm;const send=o=>ws.readyState===1&&ws.send(JSON.stringify(o));
+function toast(m){clearTimeout(tm);let t=document.querySelector('.toast');if(!t){t=document.createElement('div');t.className='toast';document.body.append(t)}t.textContent=m;tm=setTimeout(()=>t.remove(),2500)}
+function connect(){ws=new WebSocket((location.protocol==='https:'?'wss://':'ws://')+location.host);
+ ws.onopen=()=>send({t:'auth',initData:tg?.initData||'dev:'+(new URLSearchParams(location.search).get('u')||'Mehmon')});
+ ws.onmessage=e=>{const m=JSON.parse(e.data);
+  if(m.t==='me'){me=m.u;bot=m.bot;if(!joined){joined=1;const sp=tg?.initDataUnsafe?.start_param;if(sp)send({t:'join',code:sp})}}
+  if(m.t==='room')s=m.s;if(m.t==='left')s=null;if(m.t==='err')toast(m.m);render()};
+ ws.onclose=()=>setTimeout(connect,1500)}
+const avatar=p=>p.photo?`<img class="av" src="${p.photo}">`:`<div class="av">${(p.name||'?')[0].toUpperCase()}</div>`;
+const card=(c,x='')=>`<div class="card ${c.s%3?'r':''} ${s&&c.s===s.trump.s?'t':''} ${x}"><span>${R[c.r]||c.r}</span><i>${SU[c.s]}</i></div>`;
+const beats=(c,a)=>(c.s===a.s&&c.r>a.r)||(c.s===s.trump.s&&a.s!==s.trump.s);
+function render(){
+ if(!me){$.innerHTML='<h1>UzbeCards</h1><p class="status">Ulanmoqda…</p>';return}
+ if(!s){$.innerHTML=`<h1>♠ UzbeCards ♦</h1><div class="panel"><div class="row">${avatar(me)}<div><b>${me.name}</b><div class="mut">${me.username?'@'+me.username:'Telegram o\'yinchisi'}</div></div></div>
+  <div class="stats"><div><b>${me.wins}</b><span>G'alaba</span></div><div><b>${me.losses}</b><span>Mag'lubiyat</span></div><div><b>${me.games}</b><span>O'yinlar</span></div></div></div>
+  <button class="btn" onclick="send({t:'create'})">🃏 Xona yaratish</button>
+  <div class="panel col"><input id="c" maxlength="6" placeholder="XONA KODI"><button class="btn sec" onclick="send({t:'join',code:c.value.trim()})">Xonaga qo'shilish</button></div>`;return}
+ const mine=s.you===s.att?'Hujum qiling':s.you===s.def?'Himoyalaning':'Qo\'shimcha karta tashlashingiz mumkin';
+ if(s.status==='lobby'){const host=s.host===s.players[s.you].id;
+  $.innerHTML=`<h1>Durak xonasi</h1><div class="panel"><div class="mut" style="text-align:center">Xona kodi</div><div class="code">${s.code}</div></div>
+  <div class="panel col">${s.players.map(p=>`<div class="row">${avatar(p)}<b>${p.name}</b>${p.id===s.host?'<span style="color:var(--gold)">👑</span>':''}</div>`).join('')}<div class="mut">${s.players.length}/4 o'yinchi</div></div>
+  <button class="btn sec" onclick="invite()">📨 Do'stlarni taklif qilish</button>
+  ${host?`<button class="btn" ${s.players.length<2?'disabled':''} onclick="send({t:'start'})">O'yinni boshlash</button>`:'<p class="status">Xona egasi boshlashini kuting…</p>'}
+  <button class="btn sec" onclick="send({t:'leave'})">Chiqish</button>`;return}
+ const open=s.table.some(x=>!x.d),allDef=s.table.length&&!open,iDef=s.you===s.def;
+ $.innerHTML=`<div class="opp">${s.players.map((p,i)=>i===s.you?'':`<div class="panel ${i===s.att||i===s.def?'on':''}">${avatar(p)}<div>${p.name.slice(0,12)}</div><div class="mut">🂠 ${p.n} ${i===s.att?'⚔':i===s.def?'🛡':''}${p.on?'':' ⚠'}</div></div>`).join('')}</div>
+ <div class="row" style="justify-content:center">${s.deck?`<div class="card back"></div>`:''}${card(s.trump)}<span class="mut">Kozir · Qolgan: ${s.deck}</span></div>
+ <div class="felt">${s.table.map(x=>`<div class="pair">${card(x.a)}${x.d?card(x.d):''}</div>`).join('')||'<span class="mut">Stol bo\'sh</span>'}</div>
+ <div class="status">${mine}</div>
+ <div class="hand">${s.hand.map((c,i)=>card(c).replace('class="card','onclick="play('+i+')" class="card')).join('')}</div>
+ <div class="row">${iDef&&open?'<button class="btn sec" onclick="send({t:\'take\'})">Olaman</button>':''}${s.you===s.att&&allDef?'<button class="btn" onclick="send({t:\'pass\'})">Bito</button>':''}<button class="btn sec" style="max-width:110px" onclick="if(confirm('O\\'yindan chiqsangiz mag\\'lub bo\\'lasiz. Davom etasizmi?'))send({t:'leave'})">Chiqish</button></div>
+ ${s.status==='done'?`<div class="ov"><div class="panel col" style="text-align:center;width:100%;max-width:340px"><div style="font-size:54px">${s.loser===s.you?'🤡':s.loser===null?'🤝':'🏆'}</div>
+  <h1>${s.loser===null?'Durang':s.loser===s.you?'Siz durak bo\'ldingiz':'G\'alaba!'}</h1>${s.loser!==null&&s.loser!==s.you?`<div class="mut">Durak: ${s.players[s.loser].name}</div>`:''}
+  ${s.host===s.players[s.you].id?'<button class="btn" onclick="send({t:\'again\'})">Qayta o\'ynash</button>':''}<button class="btn sec" onclick="send({t:'leave'})">Chiqish</button></div></div>`:''}`}
+function play(i){const c=s.hand[i];if(s.status!=='play')return;
+ if(s.def===s.you){const k=s.table.findIndex(x=>!x.d&&beats(c,x.a));if(k<0)return toast('Bu karta bilan yopib bo\'lmaydi');send({t:'def',k,c:i})}else send({t:'att',c:i})}
+function invite(){const url=bot?`https://t.me/${bot}?startapp=${s.code}`:location.origin;
+ const txt=`UzbeCards'da Durak o'ynaymiz! Xona kodi: ${s.code}`;
+ if(tg)tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(txt)}`);
+ else navigator.clipboard?.writeText(url+' '+txt).then(()=>toast('Havola nusxalandi'))}
+connect();render();
+</script></body></html>
